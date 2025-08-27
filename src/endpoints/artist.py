@@ -1,7 +1,7 @@
 from typing import Dict, Any, Optional, List
 from src.client import LastFmClient
 from src.models import (
-    Artist,     
+    ArtistInfo,     
     ArtistSearchResponse, 
     AlbumListResponse, 
     TrackListResponse, 
@@ -22,17 +22,17 @@ class ArtistEndpoints:
     
     async def get_info(
         self, 
-        artist: str, 
+        artist: Optional[str] = None, 
         mbid: Optional[str] = None,
         lang: Optional[str] = None,
         autocorrect: bool = True,
         username: Optional[str] = None
-    ) -> Artist:
+    ) -> ArtistInfo:
         """
         Get detailed information about an artist
         
         Args:
-            artist: Artist name
+            artist: Artist name (optional if mbid is provided)
             mbid: MusicBrainz ID (optional, more accurate than name)
             lang: Language code for biography (e.g., 'en', 'es')
             autocorrect: Whether to correct misspelled artist names
@@ -43,11 +43,13 @@ class ArtistEndpoints:
         """
         params = {}
         
-        # Primary identifier
+        # Primary identifier - either mbid or artist name must be provided
         if mbid:
             params["mbid"] = mbid
-        else:
+        elif artist:
             params["artist"] = artist
+        else:
+            raise ValueError("Either 'artist' name or 'mbid' must be provided")
         
         # Optional parameters
         if lang:
@@ -58,7 +60,7 @@ class ArtistEndpoints:
             params["username"] = username
         
         raw_result = await self.client._make_request("artist.getinfo", params)
-        return Artist.from_lastfm_artist(raw_result.get("artist", {}))
+        return ArtistInfo.from_lastfm_artist(raw_result.get("artist", {}))
     
     async def search(
         self, 

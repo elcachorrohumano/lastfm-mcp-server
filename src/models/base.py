@@ -31,8 +31,9 @@ class LastFmStats(BaseModel):
     """Statistics for artists, albums, tracks"""
     listeners: int = 0
     playcount: int = 0
+    user_playcount: Optional[int] = None  # User-specific playcount when username is provided
     
-    @validator('listeners', 'playcount', pre=True)
+    @validator('listeners', 'playcount', 'user_playcount', pre=True)
     def convert_to_int(cls, v):
         """Convert string numbers to integers"""
         if isinstance(v, str):

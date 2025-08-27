@@ -4,7 +4,7 @@ Organized by endpoint for better maintainability
 """
 
 from src.models.base import LastFmImage, LastFmStats, LastFmDate
-from src.models.artist import Artist, ArtistBiography, SimilarArtist, ArtistSearchResult, ArtistSearchResponse
+from src.models.artist import ArtistInfo, ArtistBiography, SimilarArtist, ArtistSearchResult, ArtistSearchResponse
 from src.models.album import Album, AlbumListResponse, AlbumSearchResult, AlbumSearchResponse
 from src.models.track import Track, TrackListResponse, TrackSearchResult, TrackSearchResponse
 from src.models.user import UserInfo, Scrobble, RecentTracksResponse
@@ -18,7 +18,7 @@ __all__ = [
     "LastFmDate",
     
     # Artist models
-    "Artist",
+    "ArtistInfo",
     "ArtistBiography",
     "SimilarArtist", 
     "ArtistSearchResult",

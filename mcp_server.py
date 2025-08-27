@@ -55,15 +55,21 @@ chart_api = ChartEndpoints(client)
 auth_api = AuthEndpoints(client)
 logger.info("Last.fm MCP Server initialized successfully")
 
+# ======= Artist Tools =======
+
 @mcp.tool()
-async def search_artists(query: str, limit: int = 10) -> str:
+async def search_artists(
+    query: str,
+    limit: int = 10,
+    page: int = 1
+) -> str:
     """
     Search for artists on Last.fm by name
     
     Args:
         query: Artist name or search query
         limit: Maximum number of results to return (1-50, default: 10)
-    
+        page: Page number to retrieve (default: 1)
     Returns:
         Formatted list of matching artists with their stats
     """
@@ -75,12 +81,44 @@ async def search_artists(query: str, limit: int = 10) -> str:
     except Exception as e:
         return f"Error searching artists: {str(e)}"
 
-
-
-
-
-
-
+@mcp.tool()
+async def get_artist_info(
+    artist: Optional[str] = None,
+    mbid: Optional[str] = None,
+    lang: Optional[str] = None,
+    autocorrect: bool = True,
+    username: Optional[str] = None
+) -> str:
+    """
+    Get detailed information about an artist by name or MBID
+    
+    Args:
+        artist: Artist name to search for (optional if mbid is provided)
+        mbid: Optional MBID (MusicBrainz ID) of the artist (optional if artist is provided)
+        lang: Language code for the artist info (as an ISO 639 alpha-2 code)
+        autocorrect: Whether to use autocorrection for the artist name (if the name was provided)
+        username: Username for personalized info (playcount, etc.)
+    
+    Returns:
+        Formatted detailed artist information
+    """
+    try:
+        if not artist and not mbid:
+            return "Error: Either 'artist' name or 'mbid' must be provided"
+        
+        result = await artist_api.get_info(
+            artist=artist,
+            mbid=mbid,
+            lang=lang,
+            autocorrect=autocorrect,
+            username=username
+        )
+        
+        # Format the response
+        return result.to_string()
+        
+    except Exception as e:
+        return f"Error getting artist info: {str(e)}"
 
 
 if __name__ == "__main__":

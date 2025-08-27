@@ -35,7 +35,7 @@ class SimilarArtist(BaseModel):
         )
 
 
-class Artist(BaseModel):
+class ArtistInfo(BaseModel):
     """Complete artist information"""
     name: str
     mbid: str = ""
@@ -46,14 +46,56 @@ class Artist(BaseModel):
     tags: List[str] = Field(default_factory=list)
     similar: List[SimilarArtist] = Field(default_factory=list)
     
+    def to_string(self) -> str:
+        """Format artist information as string"""
+        lines = [
+            f"**{self.name}**",
+            f"URL: {self.url}"
+        ]
+        
+        if self.mbid:
+            lines.append(f"MBID: {self.mbid}")
+        
+        # Add stats
+        if self.stats.listeners > 0:
+            lines.append(f"Listeners: {self.stats.listeners:,}")
+        if self.stats.playcount > 0:
+            lines.append(f"Playcount: {self.stats.playcount:,}")
+        
+        # Add user-specific playcount if available
+        if self.stats.user_playcount is not None:
+            lines.append(f"Your playcount: {self.stats.user_playcount:,}")
+        
+        # Add biography
+        if self.biography and self.biography.summary:
+            lines.append(f"\n**Biography:**")
+            lines.append(self.biography.summary)
+        
+        # Add tags
+        if self.tags:
+            lines.append(f"\n**Tags:** {', '.join(self.tags[:10])}")  # Show first 10 tags
+            if len(self.tags) > 10:
+                lines.append(f"... and {len(self.tags) - 10} more")
+        
+        # Add similar artists
+        if self.similar:
+            lines.append(f"\n**Similar Artists:**")
+            for i, similar in enumerate(self.similar[:5], 1):  # Show first 5 similar artists
+                lines.append(f"{i}. {similar.name}")
+            if len(self.similar) > 5:
+                lines.append(f"... and {len(self.similar) - 5} more")
+        
+        return "\n".join(lines)
+    
     @classmethod
-    def from_lastfm_artist(cls, artist_data: Dict[str, Any]) -> "Artist":
-        """Convert Last.fm artist.getinfo response to Artist model"""
+    def from_lastfm_artist(cls, artist_data: Dict[str, Any]) -> "ArtistInfo":
+        """Convert Last.fm artist.getinfo response to ArtistInfo model"""
         # Extract stats
         stats_data = artist_data.get("stats", {})
         stats = LastFmStats(
             listeners=stats_data.get("listeners", 0),
-            playcount=stats_data.get("playcount", 0)
+            playcount=stats_data.get("playcount", 0),
+            user_playcount=stats_data.get("userplaycount")  # User-specific playcount
         )
         
         # Extract biography
