@@ -1,6 +1,10 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import Tag, TagTopArtistsResponse, TaggedArtist
+from src.models import (
+    Tag, TagTopArtistsResponse, TaggedArtist,
+    TagTopAlbumsResponse, TagTopTracksResponse, TagWeeklyChartListResponse,
+    TaggedAlbum, TaggedTrack, WeeklyChart
+)
 
 
 class TagEndpoints:
@@ -86,7 +90,7 @@ class TagEndpoints:
         tag: str,
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> TagTopAlbumsResponse:
         """
         Get top albums for a tag
         
@@ -105,39 +109,33 @@ class TagEndpoints:
         }
         
         raw_result = await self.client._make_request("tag.gettopalbums", params)
-        top_albums = raw_result.get("topalbums", {})
+        # Handle both old "topalbums" and new "albums" response structure
+        top_albums = raw_result.get("topalbums", raw_result.get("albums", {}))
         albums_data = top_albums.get("album", [])
         
         if isinstance(albums_data, dict):  # Single album
             albums_data = [albums_data]
         
+        # Convert to models
+        albums = [TaggedAlbum.from_lastfm_tagged(album) for album in albums_data if isinstance(album, dict)]
+        
         # Extract pagination info
         attr = top_albums.get("@attr", {})
         
-        return {
-            "tag": attr.get("tag", tag),
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "albums": [
-                {
-                    "name": album.get("name", ""),
-                    "artist": album.get("artist", {}).get("name", "") if isinstance(album.get("artist"), dict) else str(album.get("artist", "")),
-                    "mbid": album.get("mbid", ""),
-                    "url": album.get("url", ""),
-                    "rank": int(album.get("@attr", {}).get("rank", 0) or 0)
-                }
-                for album in albums_data
-                if isinstance(album, dict)
-            ]
-        }
+        return TagTopAlbumsResponse(
+            tag=attr.get("tag", tag),
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            albums=albums
+        )
     
     async def get_top_tracks(
         self, 
         tag: str,
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> TagTopTracksResponse:
         """
         Get top tracks for a tag
         
@@ -156,38 +154,31 @@ class TagEndpoints:
         }
         
         raw_result = await self.client._make_request("tag.gettoptracks", params)
-        top_tracks = raw_result.get("toptracks", {})
+        # Handle both old "toptracks" and new "tracks" response structure
+        top_tracks = raw_result.get("toptracks", raw_result.get("tracks", {}))
         tracks_data = top_tracks.get("track", [])
         
         if isinstance(tracks_data, dict):  # Single track
             tracks_data = [tracks_data]
         
+        # Convert to models
+        tracks = [TaggedTrack.from_lastfm_tagged(track) for track in tracks_data if isinstance(track, dict)]
+        
         # Extract pagination info
         attr = top_tracks.get("@attr", {})
         
-        return {
-            "tag": attr.get("tag", tag),
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "tracks": [
-                {
-                    "name": track.get("name", ""),
-                    "artist": track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
-                    "mbid": track.get("mbid", ""),
-                    "url": track.get("url", ""),
-                    "rank": int(track.get("@attr", {}).get("rank", 0) or 0),
-                    "duration": int(track.get("duration", 0) or 0)
-                }
-                for track in tracks_data
-                if isinstance(track, dict)
-            ]
-        }
+        return TagTopTracksResponse(
+            tag=attr.get("tag", tag),
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            tracks=tracks
+        )
     
     async def get_weekly_chart_list(
         self, 
         tag: str
-    ) -> Dict[str, Any]:
+    ) -> TagWeeklyChartListResponse:
         """
         Get list of available weekly charts for a tag
         
@@ -208,15 +199,10 @@ class TagEndpoints:
         if isinstance(charts_data, dict):  # Single chart
             charts_data = [charts_data]
         
-        return {
-            "tag": tag,
-            "charts": [
-                {
-                    "from": chart.get("from", ""),
-                    "to": chart.get("to", ""),
-                    "text": chart.get("#text", "")
-                }
-                for chart in charts_data
-                if isinstance(chart, dict)
-            ]
-        }
+        # Convert to models
+        charts = [WeeklyChart.from_lastfm_weekly_chart(chart) for chart in charts_data if isinstance(chart, dict)]
+        
+        return TagWeeklyChartListResponse(
+            tag=tag,
+            charts=charts
+        )

@@ -70,6 +70,39 @@ class Track(BaseModel):
             tags=tags,
             wiki=wiki
         )
+    
+    def to_string(self) -> str:
+        """Format track information as string"""
+        lines = [
+            f"**{self.name}** by {self.artist}",
+            f"URL: {self.url}"
+        ]
+        
+        if self.mbid:
+            lines.append(f"MBID: {self.mbid}")
+        if self.album:
+            lines.append(f"Album: {self.album}")
+        if self.duration:
+            minutes = self.duration // 60
+            seconds = self.duration % 60
+            lines.append(f"Duration: {minutes}:{seconds:02d}")
+        if self.playcount > 0:
+            lines.append(f"Playcount: {self.playcount:,}")
+        if self.listeners:
+            lines.append(f"Listeners: {self.listeners:,}")
+        
+        # Add wiki summary
+        if self.wiki:
+            lines.append(f"\n**Summary:**")
+            lines.append(self.wiki)
+        
+        # Add tags
+        if self.tags:
+            lines.append(f"\n**Tags:** {', '.join(self.tags[:10])}")
+            if len(self.tags) > 10:
+                lines.append(f"... and {len(self.tags) - 10} more")
+        
+        return "\n".join(lines)
 
 
 class TrackListResponse(BaseModel):
@@ -79,6 +112,30 @@ class TrackListResponse(BaseModel):
     page: int = 1
     per_page: int = 50
     tracks: List[Track] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format track list response as string"""
+        if not self.tracks:
+            return f"No tracks found for {self.artist}"
+        
+        lines = [
+            f"**Top Tracks for {self.artist}**",
+            f"Total tracks: {self.total:,}",
+            f"Page {self.page} of {self.total // self.per_page + 1 if self.total % self.per_page else self.total // self.per_page}",
+            ""
+        ]
+        
+        for i, track in enumerate(self.tracks, 1):
+            lines.append(f"{i}. **{track.name}**")
+            if track.playcount > 0:
+                lines.append(f"   Plays: {track.playcount:,}")
+            if track.listeners:
+                lines.append(f"   Listeners: {track.listeners:,}")
+            if track.album:
+                lines.append(f"   Album: {track.album}")
+            lines.append("")
+        
+        return "\n".join(lines)
 
 
 class TrackSearchResult(BaseModel):
@@ -89,6 +146,19 @@ class TrackSearchResult(BaseModel):
     url: str = ""
     listeners: int = 0
     image: Optional[LastFmImage] = None
+    
+    def to_string(self, index: Optional[int] = None) -> str:
+        """Format track search result as string"""
+        listeners = f"{self.listeners:,}" if self.listeners > 0 else "Unknown"
+        mbid_info = f" (MBID: {self.mbid})" if self.mbid else ""
+        
+        prefix = f"{index}. " if index is not None else ""
+        
+        return (
+            f"{prefix}**{self.name}** by {self.artist}{mbid_info}\n"
+            f"Listeners: {listeners}\n"
+            f"URL: {self.url}"
+        )
     
     @classmethod
     def from_lastfm_search(cls, search_data: Dict[str, Any]) -> "TrackSearchResult":
@@ -110,3 +180,74 @@ class TrackSearchResponse(BaseModel):
     start_page: int = 1
     items_per_page: int = 30
     tracks: List[TrackSearchResult] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format track search response as string"""
+        if not self.tracks:
+            return f"No tracks found for '{self.query}'"
+        
+        lines = [
+            f"Found {len(self.tracks)} tracks for '{self.query}':",
+            f"Total results available: {self.total_results:,}",
+            ""
+        ]
+        
+        for i, track in enumerate(self.tracks, 1):
+            lines.append(track.to_string(index=i))
+        
+        # Add helpful tip if there are more results
+        if len(self.tracks) == self.items_per_page and self.total_results > len(self.tracks):
+            lines.append(f"\nShowing first {len(self.tracks)} results. Use get_track_info() to learn more about specific tracks.")
+        
+        return "\n".join(lines)
+
+
+class TrackSimilarResponse(BaseModel):
+    """Response for track.getSimilar"""
+    artist: str = ""
+    track: str = ""
+    similar: List[Dict[str, Any]] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format track similar response as string"""
+        if not self.similar:
+            return f"No similar tracks found for '{self.track}' by {self.artist}"
+        
+        lines = [
+            f"**Tracks Similar to '{self.track}' by {self.artist}**",
+            f"Found {len(self.similar)} similar tracks:",
+            ""
+        ]
+        
+        for i, similar in enumerate(self.similar, 1):
+            lines.append(f"{i}. **{similar['name']}** by {similar['artist']}")
+            lines.append(f"   Match: {similar['match']:.1%}")
+            if similar.get('duration'):
+                minutes = similar['duration'] // 60
+                seconds = similar['duration'] % 60
+                lines.append(f"   Duration: {minutes}:{seconds:02d}")
+            lines.append("")
+        
+        return "\n".join(lines)
+
+
+class TrackTopTagsResponse(BaseModel):
+    """Response for track.getTopTags"""
+    artist: str = ""
+    track: str = ""
+    tags: List[Dict[str, Any]] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format track top tags response as string"""
+        if not self.tags:
+            return f"No tags found for '{self.track}' by {self.artist}"
+        
+        lines = [
+            f"**Top Tags for '{self.track}' by {self.artist}**",
+            ""
+        ]
+        
+        for i, tag in enumerate(self.tags, 1):
+            lines.append(f"{i}. **#{tag['name']}** ({tag['count']:,} times)")
+        
+        return "\n".join(lines)

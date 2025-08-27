@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import Album, AlbumSearchResponse, AlbumSearchResult
+from src.models import Album, AlbumSearchResponse, AlbumSearchResult, AlbumTopTagsResponse
 
 
 class AlbumEndpoints:
@@ -103,7 +103,7 @@ class AlbumEndpoints:
         album: str,
         mbid: Optional[str] = None,
         autocorrect: bool = True
-    ) -> Dict[str, Any]:
+    ) -> AlbumTopTagsResponse:
         """
         Get top tags for an album
         
@@ -133,10 +133,10 @@ class AlbumEndpoints:
         if isinstance(tags_data, dict):  # Single tag
             tags_data = [tags_data]
         
-        return {
-            "artist": artist,
-            "album": album,
-            "tags": [
+        return AlbumTopTagsResponse(
+            artist=artist,
+            album=album,
+            tags=[
                 {
                     "name": tag.get("name", ""),
                     "count": int(tag.get("count", 0) or 0),
@@ -145,4 +145,4 @@ class AlbumEndpoints:
                 for tag in tags_data
                 if isinstance(tag, dict)
             ]
-        }
+        )

@@ -1,6 +1,10 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import UserInfo, RecentTracksResponse, Scrobble
+from src.models import (
+    UserInfo, RecentTracksResponse, Scrobble,
+    UserTopArtistsResponse, UserTopAlbumsResponse, UserTopTracksResponse, UserLovedTracksResponse,
+    UserTopArtist, UserTopAlbum, UserTopTrack, LovedTrack, LastFmDate
+)
 
 
 class UserEndpoints:
@@ -96,7 +100,7 @@ class UserEndpoints:
         period: str = "overall",
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> UserTopArtistsResponse:
         """
         Get user's top artists
         
@@ -126,25 +130,25 @@ class UserEndpoints:
         # Extract pagination info
         attr = top_artists.get("@attr", {})
         
-        return {
-            "user": attr.get("user", user),
-            "period": period,
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "artists": [
-                {
-                    "name": artist.get("name", ""),
-                    "mbid": artist.get("mbid", ""),
-                    "url": artist.get("url", ""),
-                    "playcount": int(artist.get("playcount", 0) or 0),
-                    "rank": int(artist.get("@attr", {}).get("rank", 0) or 0)
-                }
+        return UserTopArtistsResponse(
+            user=attr.get("user", user),
+            period=period,
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            artists=[
+                UserTopArtist(
+                    name=artist.get("name", ""),
+                    mbid=artist.get("mbid", ""),
+                    url=artist.get("url", ""),
+                    playcount=int(artist.get("playcount", 0) or 0),
+                    rank=int(artist.get("@attr", {}).get("rank", 0) or 0)
+                )
                 for artist in artists_data
                 if isinstance(artist, dict)
             ]
-        }
+        )
     
     async def get_top_albums(
         self, 
@@ -152,7 +156,7 @@ class UserEndpoints:
         period: str = "overall",
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> UserTopAlbumsResponse:
         """
         Get user's top albums
         
@@ -182,26 +186,26 @@ class UserEndpoints:
         # Extract pagination info
         attr = top_albums.get("@attr", {})
         
-        return {
-            "user": attr.get("user", user),
-            "period": period,
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "albums": [
-                {
-                    "name": album.get("name", ""),
-                    "artist": album.get("artist", {}).get("name", "") if isinstance(album.get("artist"), dict) else str(album.get("artist", "")),
-                    "mbid": album.get("mbid", ""),
-                    "url": album.get("url", ""),
-                    "playcount": int(album.get("playcount", 0) or 0),
-                    "rank": int(album.get("@attr", {}).get("rank", 0) or 0)
-                }
+        return UserTopAlbumsResponse(
+            user=attr.get("user", user),
+            period=period,
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            albums=[
+                UserTopAlbum(
+                    name=album.get("name", ""),
+                    artist=album.get("artist", {}).get("name", "") if isinstance(album.get("artist"), dict) else str(album.get("artist", "")),
+                    mbid=album.get("mbid", ""),
+                    url=album.get("url", ""),
+                    playcount=int(album.get("playcount", 0) or 0),
+                    rank=int(album.get("@attr", {}).get("rank", 0) or 0)
+                )
                 for album in albums_data
                 if isinstance(album, dict)
             ]
-        }
+        )
     
     async def get_top_tracks(
         self, 
@@ -209,7 +213,7 @@ class UserEndpoints:
         period: str = "overall",
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> UserTopTracksResponse:
         """
         Get user's top tracks
         
@@ -239,33 +243,33 @@ class UserEndpoints:
         # Extract pagination info
         attr = top_tracks.get("@attr", {})
         
-        return {
-            "user": attr.get("user", user),
-            "period": period,
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "tracks": [
-                {
-                    "name": track.get("name", ""),
-                    "artist": track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
-                    "mbid": track.get("mbid", ""),
-                    "url": track.get("url", ""),
-                    "playcount": int(track.get("playcount", 0) or 0),
-                    "rank": int(track.get("@attr", {}).get("rank", 0) or 0)
-                }
+        return UserTopTracksResponse(
+            user=attr.get("user", user),
+            period=period,
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            tracks=[
+                UserTopTrack(
+                    name=track.get("name", ""),
+                    artist=track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
+                    mbid=track.get("mbid", ""),
+                    url=track.get("url", ""),
+                    playcount=int(track.get("playcount", 0) or 0),
+                    rank=int(track.get("@attr", {}).get("rank", 0) or 0)
+                )
                 for track in tracks_data
                 if isinstance(track, dict)
             ]
-        }
+        )
     
     async def get_loved_tracks(
         self, 
         user: str,
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> UserLovedTracksResponse:
         """
         Get user's loved tracks
         
@@ -293,21 +297,21 @@ class UserEndpoints:
         # Extract pagination info
         attr = loved_tracks.get("@attr", {})
         
-        return {
-            "user": attr.get("user", user),
-            "total": int(attr.get("total", 0) or 0),
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "tracks": [
-                {
-                    "name": track.get("name", ""),
-                    "artist": track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
-                    "mbid": track.get("mbid", ""),
-                    "url": track.get("url", ""),
-                    "date": track.get("date", {}).get("#text", "") if isinstance(track.get("date"), dict) else str(track.get("date", ""))
-                }
+        return UserLovedTracksResponse(
+            user=attr.get("user", user),
+            total=int(attr.get("total", 0) or 0),
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            tracks=[
+                LovedTrack(
+                    name=track.get("name", ""),
+                    artist=track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
+                    mbid=track.get("mbid", ""),
+                    url=track.get("url", ""),
+                    date=LastFmDate.from_lastfm_date(track.get("date", {}))
+                )
                 for track in tracks_data
                 if isinstance(track, dict)
             ]
-        }
+        )

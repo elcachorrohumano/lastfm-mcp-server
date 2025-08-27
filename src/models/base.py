@@ -59,3 +59,19 @@ class LastFmDate(BaseModel):
         elif isinstance(date_data, int):
             return cls(timestamp=date_data)
         return cls()
+    
+    @validator('text', pre=True)
+    def convert_text(cls, v):
+        """Convert text to string"""
+        if v is None:
+            return None
+        return str(v)
+    
+    @validator('timestamp', pre=True)
+    def convert_timestamp(cls, v):
+        """Convert timestamp to int"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return int(v) if v.isdigit() else None
+        return v

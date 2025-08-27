@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import Track, TrackSearchResponse, TrackSearchResult
+from src.models import Track, TrackSearchResponse, TrackSearchResult, TrackSimilarResponse, TrackTopTagsResponse
 
 
 class TrackEndpoints:
@@ -105,7 +105,7 @@ class TrackEndpoints:
         mbid: Optional[str] = None,
         autocorrect: bool = True,
         limit: int = 30
-    ) -> Dict[str, Any]:
+    ) -> TrackSimilarResponse:
         """
         Get similar tracks
         
@@ -138,10 +138,10 @@ class TrackEndpoints:
         if isinstance(similar_tracks, dict):  # Single track
             similar_tracks = [similar_tracks]
         
-        return {
-            "artist": artist,
-            "track": track,
-            "similar": [
+        return TrackSimilarResponse(
+            artist=artist,
+            track=track,
+            similar=[
                 {
                     "name": track.get("name", ""),
                     "artist": track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
@@ -153,7 +153,7 @@ class TrackEndpoints:
                 for track in similar_tracks
                 if isinstance(track, dict)
             ]
-        }
+        )
     
     async def get_top_tags(
         self, 
@@ -161,7 +161,7 @@ class TrackEndpoints:
         track: str,
         mbid: Optional[str] = None,
         autocorrect: bool = True
-    ) -> Dict[str, Any]:
+    ) -> TrackTopTagsResponse:
         """
         Get top tags for a track
         
@@ -191,10 +191,10 @@ class TrackEndpoints:
         if isinstance(tags_data, dict):  # Single tag
             tags_data = [tags_data]
         
-        return {
-            "artist": artist,
-            "track": track,
-            "tags": [
+        return TrackTopTagsResponse(
+            artist=artist,
+            track=track,
+            tags=[
                 {
                     "name": tag.get("name", ""),
                     "count": int(tag.get("count", 0) or 0),
@@ -203,7 +203,7 @@ class TrackEndpoints:
                 for tag in tags_data
                 if isinstance(tag, dict)
             ]
-        }
+        )
     
     async def scrobble(
         self,

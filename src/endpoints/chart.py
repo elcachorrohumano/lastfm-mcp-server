@@ -1,6 +1,9 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import ChartResponse, ChartArtist
+from src.models import (
+    ChartResponse, ChartArtist, ChartTracksResponse, ChartTagsResponse,
+    ChartTrack, ChartTag
+)
 
 
 class ChartEndpoints:
@@ -56,7 +59,7 @@ class ChartEndpoints:
         self, 
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> ChartTracksResponse:
         """
         Get global top tracks chart
         
@@ -81,31 +84,22 @@ class ChartEndpoints:
         # Extract pagination info
         attr = raw_result.get("tracks", {}).get("@attr", {})
         
-        return {
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total": int(attr.get("total", 0) or 0),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "tracks": [
-                {
-                    "name": track.get("name", ""),
-                    "artist": track.get("artist", {}).get("name", "") if isinstance(track.get("artist"), dict) else str(track.get("artist", "")),
-                    "mbid": track.get("mbid", ""),
-                    "url": track.get("url", ""),
-                    "playcount": int(track.get("playcount", 0) or 0),
-                    "listeners": int(track.get("listeners", 0) or 0),
-                    "rank": int(track.get("@attr", {}).get("rank", 0) or 0)
-                }
-                for track in tracks_data
+        return ChartTracksResponse(
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total=int(attr.get("total", 0) or 0),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            tracks=[
+                ChartTrack.from_lastfm_chart(track) for track in tracks_data
                 if isinstance(track, dict)
             ]
-        }
+        )
     
     async def get_top_tags(
         self, 
         limit: int = 50,
         page: int = 1
-    ) -> Dict[str, Any]:
+    ) -> ChartTagsResponse:
         """
         Get global top tags chart
         
@@ -130,19 +124,13 @@ class ChartEndpoints:
         # Extract pagination info
         attr = raw_result.get("tags", {}).get("@attr", {})
         
-        return {
-            "page": int(attr.get("page", 1) or 1),
-            "per_page": int(attr.get("perPage", 50) or 50),
-            "total": int(attr.get("total", 0) or 0),
-            "total_pages": int(attr.get("totalPages", 1) or 1),
-            "tags": [
-                {
-                    "name": tag.get("name", ""),
-                    "url": tag.get("url", ""),
-                    "reach": int(tag.get("reach", 0) or 0),
-                    "taggings": int(tag.get("taggings", 0) or 0)
-                }
-                for tag in tags_data
+        return ChartTagsResponse(
+            page=int(attr.get("page", 1) or 1),
+            per_page=int(attr.get("perPage", 50) or 50),
+            total=int(attr.get("total", 0) or 0),
+            total_pages=int(attr.get("totalPages", 1) or 1),
+            tags=[
+                ChartTag.from_lastfm_chart(tag) for tag in tags_data
                 if isinstance(tag, dict)
             ]
-        }
+        )

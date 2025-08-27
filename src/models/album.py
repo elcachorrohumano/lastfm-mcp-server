@@ -59,6 +59,23 @@ class Album(BaseModel):
             tags=tags,
             wiki=wiki
         )
+    def to_string(self) -> str:
+        """Format album as string"""
+        lines = [
+            f"**{self.name}**",
+            f"Artist: {self.artist}",
+            f"Playcount: {self.playcount:,}"
+        ]
+        if self.listeners:
+            lines.append(f"Listeners: {self.listeners:,}")
+        if self.image and self.image.large:
+            lines.append(f"Image: {self.image.large}")
+        if self.tags:
+            lines.append(f"Tags: {', '.join(self.tags[:10])}")
+        if self.wiki:
+            lines.append(f"**Biography:**")
+            lines.append(self.wiki)
+        return "\n".join(lines)
 
 
 class AlbumListResponse(BaseModel):
@@ -68,6 +85,32 @@ class AlbumListResponse(BaseModel):
     page: int = 1
     per_page: int = 50
     albums: List[Album] = Field(default_factory=list)
+
+    def to_string(self) -> str:
+        """Format album list as string"""
+        if not self.albums:
+            return f"No albums found for {self.artist}"
+        
+        lines = [
+            f"**Top Albums for {self.artist}**",
+            f"Total albums: {self.total:,}",
+            f"Page {self.page} of {self.total // self.per_page + 1 if self.total % self.per_page else self.total // self.per_page}",
+            ""
+        ]
+
+        for i, album in enumerate(self.albums, 1):
+            lines.append(f"{i}. **{album.name}**")
+            if album.artist:
+                lines.append(f"   Artist: {album.artist}")
+            if album.playcount > 0:
+                lines.append(f"   Plays: {album.playcount:,}")
+            if album.listeners:
+                lines.append(f"   Listeners: {album.listeners:,}")
+            if album.mbid:
+                lines.append(f"   MBID: {album.mbid}")
+            lines.append("")
+
+        return "\n".join(lines)
 
 
 class AlbumSearchResult(BaseModel):
@@ -106,3 +149,51 @@ class AlbumSearchResponse(BaseModel):
     start_page: int = 1
     items_per_page: int = 30
     albums: List[AlbumSearchResult] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format album search response as string"""
+        if not self.albums:
+            return f"No albums found for '{self.query}'"
+        
+        lines = [
+            f"Found {len(self.albums)} albums for '{self.query}':",
+            f"Total results available: {self.total_results:,}",
+            ""
+        ]
+        
+        for i, album in enumerate(self.albums, 1):
+            listeners = f"{album.listeners:,}" if album.listeners > 0 else "Unknown"
+            mbid_info = f" (MBID: {album.mbid})" if album.mbid else ""
+            
+            lines.append(f"{i}. **{album.name}** by {album.artist}{mbid_info}")
+            lines.append(f"   Listeners: {listeners}")
+            lines.append(f"   URL: {album.url}")
+            lines.append("")
+        
+        # Add helpful tip if there are more results
+        if len(self.albums) == self.items_per_page and self.total_results > len(self.albums):
+            lines.append(f"Showing first {len(self.albums)} results. Use get_album_info() to learn more about specific albums.")
+        
+        return "\n".join(lines)
+
+
+class AlbumTopTagsResponse(BaseModel):
+    """Response for album.getTopTags"""
+    artist: str = ""
+    album: str = ""
+    tags: List[Dict[str, Any]] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format album top tags response as string"""
+        if not self.tags:
+            return f"No tags found for '{self.album}' by {self.artist}"
+        
+        lines = [
+            f"**Top Tags for '{self.album}' by {self.artist}**",
+            ""
+        ]
+        
+        for i, tag in enumerate(self.tags, 1):
+            lines.append(f"{i}. **#{tag['name']}** ({tag['count']:,} times)")
+        
+        return "\n".join(lines)

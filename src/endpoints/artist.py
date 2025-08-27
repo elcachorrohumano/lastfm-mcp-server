@@ -106,7 +106,7 @@ class ArtistEndpoints:
     
     async def get_top_albums(
         self, 
-        artist: str, 
+        artist: Optional[str] = None, 
         mbid: Optional[str] = None,
         autocorrect: bool = True,
         limit: int = 50,
@@ -132,8 +132,11 @@ class ArtistEndpoints:
         
         if mbid:
             params["mbid"] = mbid
-        else:
+        elif artist:
             params["artist"] = artist
+        else:
+            raise ValueError("Either 'artist' name or 'mbid' must be provided")
+        
             
         if not autocorrect:
             params["autocorrect"] = "0"
