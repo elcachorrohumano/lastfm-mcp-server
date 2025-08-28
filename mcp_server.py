@@ -795,7 +795,12 @@ async def check_auth_status() -> str:
     """
     Check if the user is authenticated.
     Authentication is required to use the following tools:
-
+    - scrobble_track
+    - update_now_playing
+    - love_track
+    - unlove_track
+    - add_tags
+    - remove_tag
 
     Args:
         None
@@ -903,6 +908,181 @@ async def scrobble_track(
             
     except Exception as e:
         return f"Error scrobbling track: {str(e)}"
+
+@mcp.tool()
+async def update_now_playing(
+    artist: str,
+    track: str,
+    album: Optional[str] = None,
+    duration: Optional[int] = None,
+    mbid: Optional[str] = None
+) -> str:
+    """
+    Update your "now playing" status on Last.fm.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+        album: Album name (optional)
+        duration: Track duration in seconds (optional)
+        mbid: MusicBrainz Track ID (optional)
+    
+    Returns:
+        Confirmation of now playing update
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        result = await track_api.update_now_playing(
+            artist=artist,
+            track=track,
+            session_key=session_key,
+            album=album,
+            duration=duration,
+            mbid=mbid
+        )
+        
+        return f"Now playing: '{result['track']}' by {result['artist']}"
+        
+    except Exception as e:
+        return f"Error updating now playing: {str(e)}"
+
+@mcp.tool()
+async def love_track(
+    artist: str,
+    track: str
+) -> str:
+    """
+    Love a track on your Last.fm profile.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+    
+    Returns:
+        Confirmation of love action
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        result = await track_api.love(
+            artist=artist,
+            track=track,
+            session_key=session_key
+        )
+        
+        return f"Loved '{track}' by {artist}"
+        
+    except Exception as e:
+        return f"Error loving track: {str(e)}"
+
+@mcp.tool()
+async def unlove_track(
+    artist: str,
+    track: str
+) -> str:
+    """
+    Remove love from a track on your Last.fm profile.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+    
+    Returns:
+        Confirmation of unlove action
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        result = await track_api.unlove(
+            artist=artist,
+            track=track,
+            session_key=session_key
+        )
+        
+        return f"Removed love from '{track}' by {artist}"
+        
+    except Exception as e:
+        return f"Error unloving track: {str(e)}"
+
+@mcp.tool()
+async def add_tags(
+    artist: str,
+    track: str,
+    tags: str
+) -> str:
+    """
+    Add tags to a track on your Last.fm profile.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+        tags: Comma-separated list of tags (max 10)
+    
+    Returns:
+        Confirmation of tag addition
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        result = await track_api.add_tags(
+            artist=artist,
+            track=track,
+            tags=tags,
+            session_key=session_key
+        )
+        
+        return f"Added tags to '{track}' by {artist}: {', '.join(result['tags'])}"
+        
+    except Exception as e:
+        return f"Error adding tags: {str(e)}"
+
+@mcp.tool()
+async def remove_tag(
+    artist: str,
+    track: str,
+    tag: str
+) -> str:
+    """
+    Remove a tag from a track on your Last.fm profile.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+        tag: Tag to remove
+    
+    Returns:
+        Confirmation of tag removal
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        result = await track_api.remove_tag(
+            artist=artist,
+            track=track,
+            tag=tag,
+            session_key=session_key
+        )
+        
+        return f"Removed tag '{tag}' from '{track}' by {artist}"
+        
+    except Exception as e:
+        return f"Error removing tag: {str(e)}"
 
 if __name__ == "__main__":
     try:
