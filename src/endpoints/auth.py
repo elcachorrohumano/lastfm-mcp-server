@@ -43,14 +43,36 @@ class AuthEndpoints:
             "token": token
         }
         
-        raw_result = await self.client._make_request("auth.getSession", params)
-        session_data = raw_result.get("session", {})
-        
-        return {
-            "session_key": session_data.get("key", ""),
-            "username": session_data.get("name", ""),
-            "subscriber": session_data.get("subscriber", "0") == "1"
-        }
+        try:
+            # Check if we have shared secret for signature
+            if not self.client.shared_secret:
+                print("Warning: No LASTFM_SHARED_SECRET found. This may cause authentication to fail.")
+                print("Please set LASTFM_SHARED_SECRET in your .env file")
+            
+            # Try without signature first (some auth endpoints don't require it)
+            try:
+                raw_result = await self.client._make_request("auth.getSession", params, signed=False)
+            except Exception as e:
+                if "400" in str(e) and self.client.shared_secret:
+                    print("Trying with signature...")
+                    raw_result = await self.client._make_request("auth.getSession", params, signed=True)
+                else:
+                    raise e
+            
+            session_data = raw_result.get("session", {})
+            
+            return {
+                "session_key": session_data.get("key", ""),
+                "username": session_data.get("name", ""),
+                "subscriber": session_data.get("subscriber", "0") == "1"
+            }
+        except Exception as e:
+            print(f"Debug: Full error details: {e}")
+            # Let's also try to get more details about the request
+            print(f"Debug: Token being used: {token}")
+            print(f"Debug: API Key: {self.client.api_key}")
+            print(f"Debug: Shared Secret available: {'Yes' if self.client.shared_secret else 'No'}")
+            raise e
     
     async def get_mobile_session(self, username: str, password: str) -> Dict[str, Any]:
         """

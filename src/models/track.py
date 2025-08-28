@@ -74,12 +74,13 @@ class Track(BaseModel):
     def to_string(self) -> str:
         """Format track information as string"""
         lines = [
-            f"**{self.name}** by {self.artist}",
-            f"URL: {self.url}"
+            f"**{self.name}** by {self.artist}"
         ]
         
         if self.mbid:
             lines.append(f"MBID: {self.mbid}")
+        if self.url:
+            lines.append(f"URL: {self.url}")
         if self.album:
             lines.append(f"Album: {self.album}")
         if self.duration:
@@ -251,3 +252,70 @@ class TrackTopTagsResponse(BaseModel):
             lines.append(f"{i}. **#{tag['name']}** ({tag['count']:,} times)")
         
         return "\n".join(lines)
+
+
+class TrackScrobbleResponse(BaseModel):
+    """Response for track.scrobble"""
+    accepted: int = 0
+    ignored: int = 0
+    artist: str = ""
+    track: str = ""
+    
+    def to_string(self) -> str:
+        """Format scrobble response as string"""
+        if self.accepted == 1:
+            return f"Successfully scrobbled '{self.track}' by {self.artist}"
+        else:
+            return f"Scrobble failed. Accepted: {self.accepted}, Ignored: {self.ignored}"
+
+
+class TrackNowPlayingResponse(BaseModel):
+    """Response for track.updateNowPlaying"""
+    artist: str = ""
+    track: str = ""
+    
+    def to_string(self) -> str:
+        """Format now playing response as string"""
+        return f"Now playing: '{self.track}' by {self.artist}"
+
+
+class TrackLoveResponse(BaseModel):
+    """Response for track.love"""
+    artist: str = ""
+    track: str = ""
+    
+    def to_string(self) -> str:
+        """Format love response as string"""
+        return f"Loved '{self.track}' by {self.artist}"
+
+
+class TrackUnloveResponse(BaseModel):
+    """Response for track.unlove"""
+    artist: str = ""
+    track: str = ""
+    
+    def to_string(self) -> str:
+        """Format unlove response as string"""
+        return f"Removed love from '{self.track}' by {self.artist}"
+
+
+class TrackAddTagsResponse(BaseModel):
+    """Response for track.addTags"""
+    artist: str = ""
+    track: str = ""
+    tags: List[str] = Field(default_factory=list)
+    
+    def to_string(self) -> str:
+        """Format add tags response as string"""
+        return f"Added tags to '{self.track}' by {self.artist}: {', '.join(self.tags)}"
+
+
+class TrackRemoveTagResponse(BaseModel):
+    """Response for track.removeTag"""
+    artist: str = ""
+    track: str = ""
+    tag: str = ""
+    
+    def to_string(self) -> str:
+        """Format remove tag response as string"""
+        return f"Removed tag '{self.tag}' from '{self.track}' by {self.artist}"

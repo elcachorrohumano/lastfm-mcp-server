@@ -63,11 +63,18 @@ class Album(BaseModel):
         """Format album as string"""
         lines = [
             f"**{self.name}**",
-            f"Artist: {self.artist}",
-            f"Playcount: {self.playcount:,}"
+            f"Artist: {self.artist}"
         ]
+        
+        if self.mbid:
+            lines.append(f"MBID: {self.mbid}")
+        if self.url:
+            lines.append(f"URL: {self.url}")
+        
+        lines.append(f"Playcount: {self.playcount:,}")
         if self.listeners:
             lines.append(f"Listeners: {self.listeners:,}")
+        
         if self.image and self.image.large:
             lines.append(f"Image: {self.image.large}")
         if self.tags:

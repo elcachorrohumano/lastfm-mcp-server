@@ -55,10 +55,11 @@ class UserInfo(BaseModel):
     def to_string(self) -> str:
         """Format user information as string"""
         lines = [
-            f"**{self.name}**",
-            f"URL: {self.url}"
+            f"**{self.name}**"
         ]
         
+        if self.url:
+            lines.append(f"URL: {self.url}")
         if self.realname:
             lines.append(f"Real name: {self.realname}")
         if self.country:

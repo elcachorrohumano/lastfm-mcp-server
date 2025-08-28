@@ -1,6 +1,10 @@
 from typing import Dict, Any, Optional
 from src.client import LastFmClient
-from src.models import Track, TrackSearchResponse, TrackSearchResult, TrackSimilarResponse, TrackTopTagsResponse
+from src.models import (
+    Track, TrackSearchResponse, TrackSearchResult, TrackSimilarResponse, TrackTopTagsResponse,
+    TrackScrobbleResponse, TrackNowPlayingResponse, TrackLoveResponse, TrackUnloveResponse, 
+    TrackAddTagsResponse, TrackRemoveTagResponse
+)
 
 
 class TrackEndpoints:
@@ -219,7 +223,7 @@ class TrackEndpoints:
         context: Optional[str] = None,
         track_number: Optional[int] = None,
         mbid: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> TrackScrobbleResponse:
         """
         Scrobble a track to user's Last.fm profile
         Requires authentication (session key)
@@ -270,18 +274,19 @@ class TrackEndpoints:
         
         # Process scrobble response
         scrobbles = raw_result.get("scrobbles", {})
-        return {
-            "accepted": int(scrobbles.get("@attr", {}).get("accepted", 0)),
-            "ignored": int(scrobbles.get("@attr", {}).get("ignored", 0)),
-            "scrobble": scrobbles.get("scrobble", {})
-        }
+        return TrackScrobbleResponse(
+            accepted=int(scrobbles.get("@attr", {}).get("accepted", 0)),
+            ignored=int(scrobbles.get("@attr", {}).get("ignored", 0)),
+            artist=artist,
+            track=track
+        )
     
     async def love(
         self,
         artist: str,
         track: str,
         session_key: str
-    ) -> Dict[str, Any]:
+    ) -> TrackLoveResponse:
         """
         Love a track for the authenticated user
         Requires authentication (session key)
@@ -301,18 +306,17 @@ class TrackEndpoints:
         }
         
         raw_result = await self.client._make_request("track.love", params, http_method="POST")
-        return {
-            "status": "loved",
-            "artist": artist,
-            "track": track
-        }
+        return TrackLoveResponse(
+            artist=artist,
+            track=track
+        )
     
     async def unlove(
         self,
         artist: str,
         track: str,
         session_key: str
-    ) -> Dict[str, Any]:
+    ) -> TrackUnloveResponse:
         """
         Remove love from a track for the authenticated user
         Requires authentication (session key)
@@ -332,11 +336,10 @@ class TrackEndpoints:
         }
         
         raw_result = await self.client._make_request("track.unlove", params, http_method="POST")
-        return {
-            "status": "unloved",
-            "artist": artist,
-            "track": track
-        }
+        return TrackUnloveResponse(
+            artist=artist,
+            track=track
+        )
     
     async def update_now_playing(
         self,
@@ -349,7 +352,7 @@ class TrackEndpoints:
         track_number: Optional[int] = None,
         mbid: Optional[str] = None,
         context: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> TrackNowPlayingResponse:
         """
         Update the user's "now playing" status
         Requires authentication (session key)
@@ -392,14 +395,10 @@ class TrackEndpoints:
         
         # Process now playing response
         now_playing = raw_result.get("nowplaying", {})
-        return {
-            "status": "now_playing_updated",
-            "artist": now_playing.get("artist", {}).get("#text", artist),
-            "track": now_playing.get("track", {}).get("#text", track),
-            "album": now_playing.get("album", {}).get("#text", album) if album else None,
-            "corrected_artist": now_playing.get("artist", {}).get("corrected", "0") == "1",
-            "corrected_track": now_playing.get("track", {}).get("corrected", "0") == "1"
-        }
+        return TrackNowPlayingResponse(
+            artist=now_playing.get("artist", {}).get("#text", artist),
+            track=now_playing.get("track", {}).get("#text", track)
+        )
     
     async def add_tags(
         self,
@@ -407,7 +406,7 @@ class TrackEndpoints:
         track: str,
         tags: str,
         session_key: str
-    ) -> Dict[str, Any]:
+    ) -> TrackAddTagsResponse:
         """
         Add tags to a track
         Requires authentication (session key)
@@ -429,12 +428,11 @@ class TrackEndpoints:
         }
         
         raw_result = await self.client._make_request("track.addTags", params, http_method="POST")
-        return {
-            "status": "tags_added",
-            "artist": artist,
-            "track": track,
-            "tags": tags.split(",")
-        }
+        return TrackAddTagsResponse(
+            artist=artist,
+            track=track,
+            tags=tags.split(",")
+        )
     
     async def remove_tag(
         self,
@@ -442,7 +440,7 @@ class TrackEndpoints:
         track: str,
         tag: str,
         session_key: str
-    ) -> Dict[str, Any]:
+    ) -> TrackRemoveTagResponse:
         """
         Remove a tag from a track
         Requires authentication (session key)
@@ -464,9 +462,8 @@ class TrackEndpoints:
         }
         
         raw_result = await self.client._make_request("track.removeTag", params, http_method="POST")
-        return {
-            "status": "tag_removed",
-            "artist": artist,
-            "track": track,
-            "tag": tag
-        }
+        return TrackRemoveTagResponse(
+            artist=artist,
+            track=track,
+            tag=tag
+        )
