@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from src.client import LastFmClient
+from src.client import LastFmClient, LastFmApiError
 
 
 class AuthEndpoints:
@@ -19,7 +19,7 @@ class AuthEndpoints:
         Returns:
             Dictionary containing the token and authentication URL
         """
-        raw_result = await self.client._make_request("auth.getToken", {}, signed=True)
+        raw_result = await self.client._make_request("auth.getToken", {})
         token = raw_result.get("token", "")
         
         return {
@@ -43,7 +43,7 @@ class AuthEndpoints:
             "token": token
         }
         
-        raw_result = await self.client._make_request("auth.getSession", params, signed=True)
+        raw_result = await self.client._make_request("auth.getSession", params)
         session_data = raw_result.get("session", {})
         
         return {
@@ -69,7 +69,7 @@ class AuthEndpoints:
             "password": password
         }
         
-        raw_result = await self.client._make_request("auth.getMobileSession", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("auth.getMobileSession", params, http_method="POST")
         session_data = raw_result.get("session", {})
         
         return {
@@ -77,3 +77,23 @@ class AuthEndpoints:
             "username": session_data.get("name", ""),
             "subscriber": session_data.get("subscriber", "0") == "1"
         }
+    
+    async def validate_session(self, session_key: str) -> bool:
+        """
+        Validate if a session key is still valid
+        Uses user.getInfo as a lightweight authentication test
+        
+        Args:
+            session_key: The session key to validate
+        
+        Returns:
+            True if session is valid, False otherwise
+        """
+        try:
+            # Use a lightweight endpoint that requires auth
+            result = await self.client._make_request("user.getInfo", {"sk": session_key})
+            return True
+        except LastFmApiError as e:
+            if e.error_code == 9:  # Invalid session key
+                return False
+            raise e

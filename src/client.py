@@ -85,7 +85,7 @@ class LastFmClient:
         self, 
         method: str, 
         params: Dict[str, Any] = None, 
-        signed: bool = False,
+        signed: bool = None,
         http_method: str = "GET"
     ) -> Dict[str, Any]:
         """
@@ -94,11 +94,15 @@ class LastFmClient:
         Args:
             method: Last.fm API method (e.g., 'artist.getinfo')
             params: Method-specific parameters
-            signed: Whether request requires authentication signature
+            signed: Whether request requires authentication signature (auto-detected if None)
             http_method: HTTP method ('GET' or 'POST')
         """
         if params is None:
             params = {}
+        
+        # Auto-detect if authentication is needed based on session key presence
+        if signed is None:
+            signed = "sk" in params
         
         # Prepare request parameters
         request_params = self._prepare_params(method, params, signed)

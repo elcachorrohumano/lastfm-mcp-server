@@ -210,27 +210,33 @@ class TrackEndpoints:
         artist: str,
         track: str,
         timestamp: int,
+        session_key: str,
         album: Optional[str] = None,
         album_artist: Optional[str] = None,
         duration: Optional[int] = None,
         stream_id: Optional[str] = None,
         chosen_by_user: bool = True,
-        context: Optional[str] = None
+        context: Optional[str] = None,
+        track_number: Optional[int] = None,
+        mbid: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Scrobble a track to user's Last.fm profile
-        Requires authentication (signed request)
+        Requires authentication (session key)
         
         Args:
             artist: Artist name
             track: Track name
-            timestamp: Unix timestamp when track was played
+            timestamp: Unix timestamp when track was played (UTC timezone)
+            session_key: User's session key from authentication
             album: Album name (optional)
             album_artist: Album artist if different from track artist (optional)
             duration: Track duration in seconds (optional)
             stream_id: Stream ID for streaming services (optional)
             chosen_by_user: Whether user chose to play this track (optional)
-            context: Additional context (optional)
+            context: Sub-client version (optional)
+            track_number: Track number on album (optional)
+            mbid: MusicBrainz Track ID (optional)
         
         Returns:
             Scrobble confirmation
@@ -238,7 +244,8 @@ class TrackEndpoints:
         params = {
             "artist": artist,
             "track": track,
-            "timestamp": str(timestamp)
+            "timestamp": str(timestamp),
+            "sk": session_key
         }
         
         # Optional parameters
@@ -254,8 +261,12 @@ class TrackEndpoints:
             params["chosenByUser"] = "0"
         if context:
             params["context"] = context
+        if track_number:
+            params["trackNumber"] = str(track_number)
+        if mbid:
+            params["mbid"] = mbid
         
-        raw_result = await self.client._make_request("track.scrobble", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.scrobble", params, http_method="POST")
         
         # Process scrobble response
         scrobbles = raw_result.get("scrobbles", {})
@@ -289,7 +300,7 @@ class TrackEndpoints:
             "sk": session_key
         }
         
-        raw_result = await self.client._make_request("track.love", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.love", params, http_method="POST")
         return {
             "status": "loved",
             "artist": artist,
@@ -320,7 +331,7 @@ class TrackEndpoints:
             "sk": session_key
         }
         
-        raw_result = await self.client._make_request("track.unlove", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.unlove", params, http_method="POST")
         return {
             "status": "unloved",
             "artist": artist,
@@ -377,7 +388,7 @@ class TrackEndpoints:
         if context:
             params["context"] = context
         
-        raw_result = await self.client._make_request("track.updateNowPlaying", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.updateNowPlaying", params, http_method="POST")
         
         # Process now playing response
         now_playing = raw_result.get("nowplaying", {})
@@ -417,7 +428,7 @@ class TrackEndpoints:
             "sk": session_key
         }
         
-        raw_result = await self.client._make_request("track.addTags", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.addTags", params, http_method="POST")
         return {
             "status": "tags_added",
             "artist": artist,
@@ -452,7 +463,7 @@ class TrackEndpoints:
             "sk": session_key
         }
         
-        raw_result = await self.client._make_request("track.removeTag", params, signed=True, http_method="POST")
+        raw_result = await self.client._make_request("track.removeTag", params, http_method="POST")
         return {
             "status": "tag_removed",
             "artist": artist,

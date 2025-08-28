@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import sys
+import time
 from typing import Optional
 
 from mcp.server import FastMCP
@@ -787,6 +788,121 @@ async def get_top_tags(
     except Exception as e:
         return f"Error getting top tags: {str(e)}"
 
+# ======= Authentication Tools =======
+
+@mcp.tool()
+async def check_auth_status() -> str:
+    """
+    Check if the user is authenticated.
+    Authentication is required to use the following tools:
+
+
+    Args:
+        None
+
+    Returns:
+        "Authenticated" if the user is authenticated, "Not authenticated" otherwise
+    """
+    try:
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. No session key found in environment."
+        
+        result = await auth_api.validate_session(session_key)   
+        if result:
+            return "Authenticated"
+        else:
+            return "Not authenticated"
+    except Exception as e:
+        return f"Error checking auth status: {str(e)}"
+
+@mcp.tool()
+async def authenticate_user() -> str:
+    """
+    Starts the authentication process - sets the token in the environment variable and returns an auth URL for the user to visit.
+    """
+    try:
+        result = await auth_api.get_token()
+        
+        os.environ["LASTFM_TOKEN"] = result["token"]
+        
+        return f"Visit {result['auth_url']} to authorize, then use get_session() to complete authentication."
+        
+    except Exception as e:
+        return f"Error starting authentication: {str(e)}"
+
+@mcp.tool()
+async def get_session() -> str:
+    """
+    Complete the authentication process by getting a session key from the authorized token.
+    This should be called after the user has visited the authorization URL from authenticate_user().
+    """
+    try:
+        token = os.getenv("LASTFM_TOKEN")
+        if not token:
+            return "No token found. Please run authenticate_user() first to get a token."
+        
+        result = await auth_api.get_session(token)
+        
+        os.environ["LASTFM_SESSION_KEY"] = result["session_key"]
+        
+        return f"Authentication successful for user {result['username']}. Session key stored in environment."
+    except Exception as e:
+        return f"Error completing authentication: {str(e)}"
+
+# ======= Authentication Tools =======
+
+@mcp.tool()
+async def scrobble_track(
+    artist: str,
+    track: str,
+    timestamp: Optional[int] = None,
+    album: Optional[str] = None,
+    duration: Optional[int] = None,
+    mbid: Optional[str] = None
+) -> str:
+    """
+    Scrobble a track to your Last.fm profile.
+    Requires authentication - use authenticate_user() and get_session() first.
+    
+    Args:
+        artist: Artist name
+        track: Track name
+        timestamp: Unix timestamp when track was played (optional, defaults to current time)
+        album: Album name (optional)
+        duration: Track duration in seconds (optional)
+        mbid: MusicBrainz Track ID (optional, more accurate than name)
+    
+    Returns:
+        Confirmation of scrobble action
+    """
+    try:
+        # Check if user is authenticated
+        session_key = os.getenv("LASTFM_SESSION_KEY")
+        if not session_key:
+            return "Not authenticated. Please use authenticate_user() and get_session() first."
+        
+        # Use provided timestamp or current time
+        if timestamp is None:
+            timestamp = int(time.time())
+        
+        result = await track_api.scrobble(
+            artist=artist,
+            track=track,
+            timestamp=timestamp,
+            session_key=session_key,
+            album=album,
+            duration=duration,
+            mbid=mbid
+        )
+        
+        if result["accepted"] == 1:
+            return f"Successfully scrobbled '{track}' by {artist}"
+        else:
+            return f"Scrobble failed. Accepted: {result['accepted']}, Ignored: {result['ignored']}"
+            
+    except Exception as e:
+        return f"Error scrobbling track: {str(e)}"
 
 if __name__ == "__main__":
     try:
