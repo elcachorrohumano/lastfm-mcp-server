@@ -110,7 +110,7 @@ class Scrobble(BaseModel):
     
     def to_string(self) -> str:
         """Format scrobble information as string"""
-        status = "🎵 Now Playing" if self.nowplaying else "📝 Scrobbled"
+        status = "Now Playing" if self.nowplaying else "Scrobbled"
         
         lines = [
             f"{status} **{self.track}** by {self.artist}"
@@ -287,7 +287,7 @@ class LovedTrack(BaseModel):
     def to_string(self) -> str:
         """Format loved track as string"""
         lines = [
-            f"❤️ **{self.name}** by {self.artist}"
+            f"**{self.name}** by {self.artist}"
         ]
         
         if self.mbid:
@@ -430,7 +430,7 @@ class UserLovedTracksResponse(BaseModel):
             return f"No loved tracks found for user '{self.user}'"
         
         lines = [
-            f"**Loved Tracks for {self.user}** ❤️",
+            f"**Loved Tracks for {self.user}**",
             f"Page {self.page} of {self.total_pages}",
             f"Total loved tracks: {self.total:,}",
             ""
