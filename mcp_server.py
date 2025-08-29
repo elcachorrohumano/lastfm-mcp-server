@@ -186,7 +186,7 @@ async def get_artist_info(
     username: Optional[str] = None
 ) -> str:
     """
-    Get detailed information about an artist by name or MBID
+    Get detailed information about an artist by name or MBID. You can get a user's playcount, etc. by providing a username.
     
     Args:
         artist: Artist name to search for (optional if mbid is provided)
