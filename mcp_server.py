@@ -193,7 +193,7 @@ async def get_artist_info(
         mbid: Optional MBID (MusicBrainz ID) of the artist (optional if artist is provided)
         lang: Language code for the artist info (as an ISO 639 alpha-2 code)
         autocorrect: Whether to use autocorrection for the artist name
-        username: Username for personalized info (playcount, etc.)
+        username: If the username is provided, the artist info will be personalized with the user's playcount, etc.
     
     Returns:
         Formatted detailed artist information
