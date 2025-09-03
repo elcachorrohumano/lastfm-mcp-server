@@ -688,7 +688,7 @@ async def scrobble_track(
     mbid: Optional[str] = None
 ) -> str:
     """
-    Scrobble a track to your Last.fm profile.
+    Scrobble a track to your Last.fm profile. It can be used for a specific timestamp or current time.
     Requires authentication - use authenticate_user() and get_session() first.
     
     Args:
